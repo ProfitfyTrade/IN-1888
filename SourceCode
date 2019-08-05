@@ -1,0 +1,141 @@
+Option Explicit
+'************************************************************************
+'*                                IN 1888                               *
+'************************************************************************
+'* Autor     : Jaison Carvalho                                          *
+'*             Profitfy                                                 *
+'* Data      : 05.08.2019                                               *
+'************************************************************************
+'* Descrição : Macro que cria arquivo para atendimento da IN 1888 RFB   *
+'************************************************************************
+Sub GerarArquivoReceita()
+Dim File As String
+Dim Extension As String
+Dim iFile As Long
+Dim Version
+Dim i As Long
+Dim j As Long
+Dim TotalBuySell As Long
+Dim TotalValueBuySell As Double
+Dim Reg0120 As Long
+Dim Reg0210 As Long
+Dim Reg0410 As Long
+Dim Reg0510 As Long
+Dim Reg0710 As Long
+Dim Reg0910 As Long
+Dim Reg1000 As Long
+Dim FileAlreadOpened As Boolean
+
+File = "Cripto_"
+Extension = ".rf"
+iFile = FreeFile
+
+If (Planilha6.Cells(1, 2)) <> "" Then
+    File = File & Planilha6.Cells(1, 2)
+Else
+    Exit Sub
+End If
+If Planilha6.Cells(3, 2) <> "" And Planilha6.Cells(3, 2) > Planilha6.Cells(2, 2) Then
+    If (FileAlreadOpened = False) Then
+            Open File + Extension For Output As iFile
+            FileAlreadOpened = True
+    End If
+    For j = 2 To 65535
+        If Planilha1.Cells(j, 1) = Empty Then
+            Exit For
+        End If
+        
+        Print #iFile, "0110" & "|" _
+        & SeparaNumeros(Planilha1.Cells(j, 1), True) & "|" _
+        & Planilha1.Cells(j, 2) & "|" _
+        & Planilha1.Cells(j, 3) & "|" _
+        & Planilha1.Cells(j, 4) & "|" _
+        & Planilha1.Cells(j, 5) & "|" _
+        & Planilha1.Cells(j, 6) & "|" _
+        & Planilha1.Cells(j, 7) & "|" _
+        & Planilha1.Cells(j, 8) & "|" _
+        & Planilha1.Cells(j, 9) & "|" _
+        & SeparaNumeros(Planilha1.Cells(j, 10), True) & "|" _
+        & Planilha1.Cells(j, 11) & "|" _
+        & Acento(Planilha1.Cells(j, 12)) & "|" _
+        & Planilha1.Cells(j, 13) & "|" _
+        & Planilha1.Cells(j, 14) & "|" _
+        & Planilha1.Cells(j, 15) & "|" _
+        & Planilha1.Cells(j, 16) & "|" _
+        & Planilha1.Cells(j, 17) & "|" _
+        & Planilha1.Cells(j, 18) & "|" _
+        & Planilha1.Cells(j, 19)
+        TotalBuySell = TotalBuySell + 1
+        TotalValueBuySell = TotalValueBuySell + Planilha1.Cells(j, 4)
+    Next j
+End If
+If (TotalBuySell > 0) Then
+    Print #iFile, "9999" & "|" _
+    & TotalBuySell & "|" _
+    & TotalValueBuySell & "|" _
+    & Reg0120 & "|" _
+    & Reg0210 & "|" _
+    & Reg0410 & "|" _
+    & Reg0510 & "|" _
+    & Reg0710 & "|" _
+    & Reg0910 & "|" _
+    & Reg1000
+    Close #iFile
+    MsgBox "Arquivo Gerado com sucesso: " + vbCrLf + File + Extension, vbInformation, "Informação"
+    ActiveWorkbook.FollowHyperlink Address:=Application.ActiveWorkbook.Path, NewWindow:=True
+Else
+    MsgBox "Negociações não atingiram limite, arquivo não foi gerado" + vbCrLf + File + Extension, vbInformation, "Informação"
+End If
+
+End Sub
+Public Function SeparaNumeros(rng As Range, e_num As Boolean) As String
+    Dim x As Long, xstr As String
+    Dim i As Integer
+    x = VBA.Len(rng.Value)
+  
+    For i = 1 To x
+  
+    xstr = VBA.Mid(rng.Value, i, 1)
+  
+    If ((VBA.IsNumeric(xstr) And e_num) Or (Not (VBA.IsNumeric(xstr)) And Not (e_num))) Then
+  
+    SeparaNumeros = SeparaNumeros + xstr
+  
+    End If
+    Next
+
+End Function
+Function Acento(caract)
+ 
+    'Acentos e caracteres especiais que serão buscados na string
+    'Você pode definir outros caracteres nessa variável, mas
+    ' precisará também colocar a letra correspondente em codiB
+    Dim codiA  As String
+    codiA = "àáâãäèéêëìíîïòóôõöùúûüÀÁÂÃÄÈÉÊËÌÍÎÒÓÔÕÖÙÚÛÜçÇñÑ"
+     
+    'Letras correspondentes para substituição
+    Dim codiB As String
+    codiB = "aaaaaeeeeiiiiooooouuuuAAAAAEEEEIIIOOOOOUUUUcCnN"
+     
+    'Armazena em temp a string recebida
+    Dim temp As String
+    temp = caract
+     
+    'Loop que irá de andará a string letra a letra
+    Dim i As Integer
+    Dim p As Integer
+    For i = 1 To Len(temp)
+     
+        'InStr buscará se a letra indice i de temp pertence a
+        ' codiA e se existir retornará a posição dela
+        p = InStr(codiA, Mid(temp, i, 1))
+         
+        'Substitui a letra de indice i em codiA pela sua
+        ' correspondente em codiB
+        If p > 0 Then Mid(temp, i, 1) = Mid(codiB, p, 1)
+    Next
+     
+    'Retorna a nova string
+    Acento = temp
+     
+End Function
